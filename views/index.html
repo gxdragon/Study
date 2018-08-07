@@ -111,6 +111,7 @@
 				wheelGroup.add(_sphere1);			
 				wheelGroup.add(_sphere2);			
 				wheelGroup.position.y=2;
+				wheelGroup.position.x=-10;
 
         		geometry = new THREE.BoxGeometry(20,2,10 );
 				material = new THREE.MeshBasicMaterial( {color: 0x000000} );
@@ -122,6 +123,7 @@
 				boxGroup.add(b1);
 				boxGroup.add(b2);
 				boxGroup.position.y=2;
+				boxGroup.position.x=-10;
 
 				_scene.add( wheelGroup );
 				_scene.add( boxGroup );
