@@ -15,10 +15,10 @@
 			var _renderer = new THREE.WebGLRenderer();
 
 			var _stats;
-			var _oldPlane, _newPlane, _sphere;
+			var _oldPlane, _newPlane, _sphere1, _sphere2;
 
         	var _planeSpeed = 1;
-			var _speed = 0.1;
+			var _wheelSpeed = 0.1;
 			var _planeGeom = new THREE.PlaneGeometry(150, 20, 1, 1);
 			var _planeMaterial = new THREE.MeshBasicMaterial({color:0xcccccc, wireframe:true});
 			
@@ -43,13 +43,7 @@
 				_oldPlane.position.z = 0;
 				_scene.add(_oldPlane);
 				
-				var geom = new THREE.SphereGeometry(4, 20, 20);
-				var material = new THREE.MeshBasicMaterial({color:0xffffff, wireframe:true});
-				_sphere = new THREE.Mesh(geom, material);
-				_sphere.position.x = 0;
-				_sphere.position.y = 4;
-				_sphere.position.z = 0;
-				_scene.add(_sphere);
+				createCar();
 				
 				_camera.position.x = -30;
 				_camera.position.y = 40;
@@ -71,13 +65,14 @@
         	}
         	
         	function move(event){
-        		_sphere.rotation.z -= _speed;
+        		_sphere1.rotation.y += _wheelSpeed;
+        		_sphere2.rotation.y += _wheelSpeed;
 				_oldPlane.position.x -= _planeSpeed;
 				if(_newPlane){
 					_newPlane.position.x -= _planeSpeed;
 					if(_newPlane.position.x==23){
 						_scene.remove(_oldPlane);
-						_oldPlane = new THREE.Mesh(_planeGeom, _planeMaterial);
+						_oldPlane = new THREE.Mesh(_planeGeom, new THREE.MeshBasicMaterial({color:0x003b9b}));
 						_oldPlane.rotation.x = -0.5 * Math.PI;
 						_oldPlane.position.x = 173;
 						_oldPlane.position.y = 0;
@@ -89,7 +84,7 @@
 					if(_newPlane){
 						_scene.remove(_newPlane);
 					}
-					_newPlane = new THREE.Mesh(_planeGeom, _planeMaterial);
+					_newPlane = new THREE.Mesh(_planeGeom, new THREE.MeshBasicMaterial({color:0x9b4300}));
 					_newPlane.rotation.x = -0.5 * Math.PI;
 					_newPlane.position.x = 173;
 					_newPlane.position.y = 0;
@@ -97,6 +92,40 @@
 					_scene.add(_newPlane);
 				} 
 			}
+        	
+        	function createCar(){
+				var wheelGroup = new THREE.Group();
+				var boxGroup = new THREE.Group();
+        		//2
+        		var geometry = new THREE.CylinderGeometry( 2, 2, 1, 20 );
+				var material = new THREE.MeshBasicMaterial( {color: 0xffffff, wireframe: true} );
+				_sphere1 = new THREE.Mesh( geometry, material );
+				_sphere2 = new THREE.Mesh( geometry, material );
+				_sphere1.rotation.x = -0.5 * Math.PI;
+				_sphere2.rotation.x = -0.5 * Math.PI;
+				_sphere1.position.x = 5;
+				_sphere1.position.z = 5;
+				_sphere2.position.x = -5;
+				_sphere2.position.z = 5;
+				
+				wheelGroup.add(_sphere1);			
+				wheelGroup.add(_sphere2);			
+				wheelGroup.position.y=2;
+
+        		geometry = new THREE.BoxGeometry(20,2,10 );
+				material = new THREE.MeshBasicMaterial( {color: 0x000000} );
+				var b1 = new THREE.Mesh( geometry, material );
+        		geometry = new THREE.BoxGeometry(10,2,10 );
+				var b2 = new THREE.Mesh( geometry, material );
+				b1.position.y=1;
+				b2.position.y=3;
+				boxGroup.add(b1);
+				boxGroup.add(b2);
+				boxGroup.position.y=2;
+
+				_scene.add( wheelGroup );
+				_scene.add( boxGroup );
+        	}
 		</script>
 	</body>
 </html>
