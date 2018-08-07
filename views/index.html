@@ -19,21 +19,26 @@
 
         	var _planeSpeed = 1;
 			var _wheelSpeed = 0.1;
-			var _planeGeom = new THREE.PlaneGeometry(150, 20, 1, 1);
-			var _planeMaterial = new THREE.MeshBasicMaterial({color:0xcccccc, wireframe:true});
+			var _planeGeom = new THREE.PlaneGeometry(150, 33, 1, 1);
+			var _planeMaterial = new THREE.MeshLambertMaterial({color:0xcccccc, wireframe:true, shading: THREE.FlatShading});
 			
             init();
             render(); 
 			function init(){
-				_renderer.setClearColor(0xEEEEEE);
+				_renderer.setClearColor(0xEEEEEE, 1.0);
 				_renderer.setSize(window.innerWidth, window.innerHeight);
-				
+				_renderer.shadowMap.enabled = true;
 				var axes = new THREE.AxesHelper(20);
 				_scene.add(axes);
-				
-				var light = new THREE.SpotLight(0xffffff);
-				light.position.set(-40, 60, -10);
-				_scene.add(light);
+
+
+                //Light Setting
+            	var directionalLight = new THREE.DirectionalLight( 0xffffff );
+                directionalLight.position.x = 5; 
+                directionalLight.position.y = 20; 
+                directionalLight.position.z = 5; 
+                directionalLight.position.normalize();
+                _scene.add( directionalLight );
 				
 				
 				_oldPlane = new THREE.Mesh(_planeGeom, _planeMaterial);
@@ -41,6 +46,7 @@
 				_oldPlane.position.x = 30;
 				_oldPlane.position.y = 0;
 				_oldPlane.position.z = 0;
+				_oldPlane.receiveShadow = true;
 				_scene.add(_oldPlane);
 				
 				createCar();
@@ -70,25 +76,27 @@
 				_oldPlane.position.x -= _planeSpeed;
 				if(_newPlane){
 					_newPlane.position.x -= _planeSpeed;
-					if(_newPlane.position.x==23){
+					if(_newPlane.position.x==29){
 						_scene.remove(_oldPlane);
-						_oldPlane = new THREE.Mesh(_planeGeom, new THREE.MeshBasicMaterial({color:0x003b9b}));
+						_oldPlane = new THREE.Mesh(_planeGeom, new THREE.MeshLambertMaterial({color:0x003b9b, shading: THREE.FlatShading}));
 						_oldPlane.rotation.x = -0.5 * Math.PI;
-						_oldPlane.position.x = 173;
+						_oldPlane.position.x = 179;
 						_oldPlane.position.y = 0;
 						_oldPlane.position.z = 0;
+						_oldPlane.receiveShadow = true;
 						_scene.add(_oldPlane);
 					}
 				}
-				if(_oldPlane.position.x==23){
+				if(_oldPlane.position.x==29){
 					if(_newPlane){
 						_scene.remove(_newPlane);
 					}
-					_newPlane = new THREE.Mesh(_planeGeom, new THREE.MeshBasicMaterial({color:0x9b4300}));
+					_newPlane = new THREE.Mesh(_planeGeom, new THREE.MeshLambertMaterial({color:0x9b4300, shading: THREE.FlatShading}));
 					_newPlane.rotation.x = -0.5 * Math.PI;
-					_newPlane.position.x = 173;
+					_newPlane.position.x = 179;
 					_newPlane.position.y = 0;
 					_newPlane.position.z = 0;
+					_newPlane.receiveShadow = true;
 					_scene.add(_newPlane);
 				} 
 			}
@@ -97,26 +105,26 @@
 				var wheelGroup = new THREE.Group();
 				var boxGroup = new THREE.Group();
         		//2
-        		var geometry = new THREE.CylinderGeometry( 2, 2, 1, 20 );
-				var material = new THREE.MeshBasicMaterial( {color: 0xffffff, wireframe: true} );
+        		var geometry = new THREE.CylinderGeometry(1, 1, 1, 20 );
+				var material = new THREE.MeshLambertMaterial( {color: 0xffffff, wireframe: true, shading: THREE.FlatShading} );
 				_sphere1 = new THREE.Mesh( geometry, material );
 				_sphere2 = new THREE.Mesh( geometry, material );
 				_sphere1.rotation.x = -0.5 * Math.PI;
 				_sphere2.rotation.x = -0.5 * Math.PI;
-				_sphere1.position.x = 5;
-				_sphere1.position.z = 5;
-				_sphere2.position.x = -5;
-				_sphere2.position.z = 5;
+				_sphere1.position.x = 3;
+				_sphere1.position.z = 2;
+				_sphere2.position.x = -3;
+				_sphere2.position.z = 2;
 				
 				wheelGroup.add(_sphere1);			
 				wheelGroup.add(_sphere2);			
 				wheelGroup.position.y=2;
 				wheelGroup.position.x=-10;
 
-        		geometry = new THREE.BoxGeometry(20,2,10 );
-				material = new THREE.MeshBasicMaterial( {color: 0x000000} );
+        		geometry = new THREE.BoxGeometry(10,2,4 );
+				material = new THREE.MeshLambertMaterial( {color: 0xff0000, shading: THREE.FlatShading} );
 				var b1 = new THREE.Mesh( geometry, material );
-        		geometry = new THREE.BoxGeometry(10,2,10 );
+        		geometry = new THREE.BoxGeometry(5,2,4 );
 				var b2 = new THREE.Mesh( geometry, material );
 				b1.position.y=1;
 				b2.position.y=3;
@@ -124,7 +132,9 @@
 				boxGroup.add(b2);
 				boxGroup.position.y=2;
 				boxGroup.position.x=-10;
-
+				b1.castShadow = true;
+				b2.castShadow = true;
+				boxGroup.castShadow = true;
 				_scene.add( wheelGroup );
 				_scene.add( boxGroup );
         	}
