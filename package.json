@@ -1,0 +1,13 @@
+{
+  "name": "Study",
+  "private": true,
+  "version": "0.0.1",
+  "description": "Study Three.js & Node.js",
+  "main": "app.js",
+  "author": "https://github.com/gxdragon/Study.git",
+  "license": "ISC",
+  "dependencies": {
+    "ejs": "^2.6.1",
+    "express": "^4.16.3"
+  }
+}
