@@ -9,6 +9,7 @@
         <script src="/public/js/three/libs/stats.min.js"></script>
 	</head>
 	<body>
+	<div id="scoreBoard"></div>
 		<script>
 			var _scene = new THREE.Scene();
 			var _camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -21,26 +22,32 @@
 			var _wheelSpeed = 0.1;
 			var _planeGeom = new THREE.PlaneGeometry(150, 33, 1, 1);
 			var _planeMaterial = new THREE.MeshLambertMaterial({color:0xcccccc, wireframe:true, shading: THREE.FlatShading});
-			
+
+			var _carGroup = new THREE.Group();
+			var _coinGroup = new THREE.Group();
+
             init();
             render(); 
 			function init(){
+				//Renderer
 				_renderer.setClearColor(0xEEEEEE, 1.0);
 				_renderer.setSize(window.innerWidth, window.innerHeight);
 				_renderer.shadowMap.enabled = true;
-				var axes = new THREE.AxesHelper(20);
+
+				//Axes
+				let axes = new THREE.AxesHelper(20);
 				_scene.add(axes);
 
 
                 //Light Setting
-            	var directionalLight = new THREE.DirectionalLight( 0xffffff );
+            	let directionalLight = new THREE.DirectionalLight( 0xffffff );
                 directionalLight.position.x = 5; 
                 directionalLight.position.y = 20; 
                 directionalLight.position.z = 5; 
                 directionalLight.position.normalize();
                 _scene.add( directionalLight );
 				
-				
+				//Road
 				_oldPlane = new THREE.Mesh(_planeGeom, _planeMaterial);
 				_oldPlane.rotation.x = -0.5 * Math.PI;
 				_oldPlane.position.x = 30;
@@ -48,29 +55,52 @@
 				_oldPlane.position.z = 0;
 				_oldPlane.receiveShadow = true;
 				_scene.add(_oldPlane);
-				
+
+				//Car
 				createCar();
 				
+				//Coin
+                addCoin();
+				
+				//Camera
 				_camera.position.x = -30;
 				_camera.position.y = 40;
 				_camera.position.z = 30;
 				_camera.lookAt(_scene.position);
 				
+				//Renderer Target
 				document.body.appendChild(_renderer.domElement);
+				
+				//Stats
                 _stats = new Stats();
                 _stats.domElement.style.position = 'absolute';
                 _stats.domElement.style.top = '0px';
                 _stats.domElement.style.zIndex = 100;
+                //Stats Target
                 document.body.appendChild(_stats.domElement);
+                
+                //event
+                window.addEventListener('keydown', function(event){ keyDownHandler(event); });	//keydown event
+                window.addEventListener('resize', onWindowResize, false );					//window resize event
 			}
+
         	function render(){
                 requestAnimationFrame( render );
-                move(null);
+
+                defaultMove();
                 _stats.update();
                 _renderer.render( _scene, _camera );
         	}
         	
-        	function move(event){
+        	function defaultMove(){
+        		_coin1.rotation.z += 0.2;
+        		_coin2.rotation.z += 0.2;
+        		_coin3.rotation.z += 0.2;
+
+        		_coin1.position.x -= _planeSpeed;
+        		_coin2.position.x -= _planeSpeed;
+        		_coin3.position.x -= _planeSpeed;
+        		
         		_sphere1.rotation.y += _wheelSpeed;
         		_sphere2.rotation.y += _wheelSpeed;
 				_oldPlane.position.x -= _planeSpeed;
@@ -100,13 +130,42 @@
 					_scene.add(_newPlane);
 				} 
 			}
+
+        	var _coin1, _coin2, _coin3;
+        	//x:red y:green z:blue
+        	function addCoin(){
+        		let geometry = new THREE.CylinderGeometry(2, 2, 1, 20 );
+        		let material = new THREE.MeshLambertMaterial( {color: 0xf9eb4a, shading: THREE.FlatShading} );
+        		_coin1 = new THREE.Mesh( geometry, material );
+        		_coin2 = new THREE.Mesh( geometry, material );
+        		_coin3 = new THREE.Mesh( geometry, material );
+        		_coin1.rotation.x = -0.5 * Math.PI;
+        		_coin1.position.y = 2;
+        		_coin1.position.z = -10;
+        		_coin2 = new THREE.Mesh( geometry, material );
+        		_coin2.rotation.x = -0.5 * Math.PI;
+        		_coin2.position.y = 2;
+        		_coin2.position.z = 1;
+        		_coin3 = new THREE.Mesh( geometry, material );
+        		_coin3.rotation.x = -0.5 * Math.PI;
+        		_coin3.position.y = 2;
+        		_coin3.position.z = 12;
+        		/* _coinGroup.add(_coin1);
+        		_coinGroup.add(_coin2);
+        		_coinGroup.add(_coin3); */
+        		_coin1.position.x =100;
+        		_coin2.position.x =100;
+        		_coin3.position.x =100;
+        		_scene.add(_coin1);
+        		_scene.add(_coin2);
+        		_scene.add(_coin3);
+        	}
+        	
         	
         	function createCar(){
-				var wheelGroup = new THREE.Group();
-				var boxGroup = new THREE.Group();
         		//2
-        		var geometry = new THREE.CylinderGeometry(1, 1, 1, 20 );
-				var material = new THREE.MeshLambertMaterial( {color: 0xffffff, wireframe: true, shading: THREE.FlatShading} );
+        		let geometry = new THREE.CylinderGeometry(1, 1, 1, 20 );
+				let material = new THREE.MeshLambertMaterial( {color: 0xffffff, wireframe: true, shading: THREE.FlatShading} );
 				_sphere1 = new THREE.Mesh( geometry, material );
 				_sphere2 = new THREE.Mesh( geometry, material );
 				_sphere1.rotation.x = -0.5 * Math.PI;
@@ -116,27 +175,47 @@
 				_sphere2.position.x = -3;
 				_sphere2.position.z = 2;
 				
-				wheelGroup.add(_sphere1);			
-				wheelGroup.add(_sphere2);			
-				wheelGroup.position.y=2;
-				wheelGroup.position.x=-10;
+				_carGroup.add(_sphere1);			
+				_carGroup.add(_sphere2);			
 
         		geometry = new THREE.BoxGeometry(10,2,4 );
 				material = new THREE.MeshLambertMaterial( {color: 0xff0000, shading: THREE.FlatShading} );
-				var b1 = new THREE.Mesh( geometry, material );
+				let b1 = new THREE.Mesh( geometry, material );
         		geometry = new THREE.BoxGeometry(5,2,4 );
-				var b2 = new THREE.Mesh( geometry, material );
+        		let b2 = new THREE.Mesh( geometry, material );
 				b1.position.y=1;
 				b2.position.y=3;
-				boxGroup.add(b1);
-				boxGroup.add(b2);
-				boxGroup.position.y=2;
-				boxGroup.position.x=-10;
+				_carGroup.add(b1);
+				_carGroup.add(b2);
+				_carGroup.position.y=2;
+				_carGroup.position.x=-13;
+				_carGroup.position.z=3;
 				b1.castShadow = true;
 				b2.castShadow = true;
-				boxGroup.castShadow = true;
-				_scene.add( wheelGroup );
-				_scene.add( boxGroup );
+				_carGroup.castShadow = true;
+				_scene.add( _carGroup );
+        	}
+
+        	function keyDownHandler(event){
+        		switch(event.keyCode){
+	        		case 39:
+	            		if(_carGroup.position.z<13){
+	        				_carGroup.position.z += 10;
+	            		}
+        			break;
+	        		case 37:
+	        			if(_carGroup.position.z>0){
+	        				_carGroup.position.z -= 10;
+	        			}
+        			break;
+        		}
+        	}
+
+        	function onWindowResize(){
+        	    _camera.aspect = window.innerWidth / window.innerHeight;
+        	    _camera.updateProjectionMatrix();
+
+        	    _renderer.setSize( window.innerWidth, window.innerHeight );
         	}
 		</script>
 	</body>
