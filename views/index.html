@@ -21,8 +21,9 @@
 
         	var _planeSpeed = 1;
 			var _wheelSpeed = 0.1;
+			
 			var _planeGeom = new THREE.PlaneGeometry(155, 33, 1, 1);
-			var _planeMaterial = new THREE.MeshLambertMaterial({color:0xcccccc, wireframe:true, flatShading :true});
+			var _planeMaterial = new THREE.MeshLambertMaterial({flatShading : true, map : THREE.ImageUtils.loadTexture("/public/img/road.png")});
 
 			var _carGroup = new THREE.Group();
 			var _coinGroup = new THREE.Group();
@@ -69,7 +70,7 @@
 				_oldPlane.name = "road";
 				_scene.add(_oldPlane);
 				//Road2
-				_newPlane = new THREE.Mesh(_planeGeom, new THREE.MeshLambertMaterial({color:0x9b4300, wireframe:true, flatShading :true}));
+				_newPlane = new THREE.Mesh(_planeGeom, _planeMaterial);
 				_newPlane.rotation.x = -0.5 * Math.PI;
 				_newPlane.position.x = 210;
 				_newPlane.position.y = 0;
@@ -188,7 +189,7 @@
 				if(!_frustum.intersectsObject(_oldPlane)){
 					_scene.remove(_oldPlane);
 					fn_addBlock();
-					_oldPlane = new THREE.Mesh(_planeGeom, new THREE.MeshLambertMaterial({color:0x003b9b, wireframe:true, flatShading : true}));
+					_oldPlane = new THREE.Mesh(_planeGeom, _planeMaterial);
 					_oldPlane.rotation.x = -0.5 * Math.PI;
 					_oldPlane.position.x = 155 + _newPlane.position.x;
 					_oldPlane.position.y = 0;
@@ -200,7 +201,7 @@
 				if(!_frustum.intersectsObject(_newPlane)){
 					_scene.remove(_newPlane);
 					fn_addBlock();
-					_newPlane = new THREE.Mesh(_planeGeom, new THREE.MeshLambertMaterial({color:0x9b4300, wireframe:true, flatShading : true}));
+					_newPlane = new THREE.Mesh(_planeGeom, _planeMaterial);
 					_newPlane.rotation.x = -0.5 * Math.PI;
 					_newPlane.position.x = 155 + _oldPlane.position.x;
 					_newPlane.position.y = 0;
