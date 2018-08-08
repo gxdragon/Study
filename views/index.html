@@ -9,7 +9,7 @@
         <script src="/public/js/three/libs/stats.min.js"></script>
 	</head>
 	<body>
-	<div id="scoreBoard" style="position:absolute;z-index:100000;top:0px;right:0px;width:100px;height:30px;background-color:white;"></div>
+	<div id="scoreBoard" style="position:absolute;z-index:100000;top:0px;right:0px;width:100px;height:50px;background-color:white;"></div>
 	<div id="gameOver" style="position:absolute;z-index:100000;top:45%;left:45%;width:100px;height:30px;background:rgba(255, 0, 0, 0.0);display:none;"><font color="red" style="font-weight: bold;font-size: 50px;">Game Over</font></div>
 		<script>
 			var _scene = new THREE.Scene();
@@ -21,8 +21,8 @@
 
         	var _planeSpeed = 1;
 			var _wheelSpeed = 0.1;
-			var _planeGeom = new THREE.PlaneGeometry(150, 33, 1, 1);
-			var _planeMaterial = new THREE.MeshLambertMaterial({color:0xcccccc, wireframe:true, shading: THREE.FlatShading});
+			var _planeGeom = new THREE.PlaneGeometry(155, 33, 1, 1);
+			var _planeMaterial = new THREE.MeshLambertMaterial({color:0xcccccc, wireframe:true, flatShading :true});
 
 			var _carGroup = new THREE.Group();
 			var _coinGroup = new THREE.Group();
@@ -33,6 +33,12 @@
         	var _positionZ = [-10,1,12];
        
 			var _score = 0;
+
+			var _frustum = new THREE.Frustum();
+			var _cameraViewProjectionMatrix = new THREE.Matrix4();
+			var _interval = setInterval(function(){ 
+             	_planeSpeed = parseFloat((_planeSpeed + 0.1).toFixed(2));
+            }, 1000);
             init();
             render(); 
 			function init(){
@@ -42,9 +48,8 @@
 				_renderer.shadowMap.enabled = true;
 
 				//Axes
-				let axes = new THREE.AxesHelper(20);
-				_scene.add(axes);
-
+				/* let axes = new THREE.AxesHelper(20);
+				_scene.add(axes); */
 
                 //Light Setting
             	let directionalLight = new THREE.DirectionalLight( 0xffffff );
@@ -54,29 +59,40 @@
                 directionalLight.position.normalize();
                 _scene.add( directionalLight );
 				
-				//Road
+				//Road1
 				_oldPlane = new THREE.Mesh(_planeGeom, _planeMaterial);
 				_oldPlane.rotation.x = -0.5 * Math.PI;
-				_oldPlane.position.x = 30;
+				_oldPlane.position.x = 55;
 				_oldPlane.position.y = 0;
 				_oldPlane.position.z = 0;
 				_oldPlane.receiveShadow = true;
+				_oldPlane.name = "road";
 				_scene.add(_oldPlane);
-
+				//Road2
+				_newPlane = new THREE.Mesh(_planeGeom, new THREE.MeshLambertMaterial({color:0x9b4300, wireframe:true, flatShading :true}));
+				_newPlane.rotation.x = -0.5 * Math.PI;
+				_newPlane.position.x = 210;
+				_newPlane.position.y = 0;
+				_newPlane.position.z = 0;
+				_newPlane.receiveShadow = true;
+				_newPlane.name = "road";
+				_scene.add(_newPlane);
+				
 				//Car
-				createCar();
+				fn_createCar();
 				
-				//Coin
-                addCoin();
-				
-				//Bomb
-				addBomb();
+				//Block(Bomb, Coin)
+				fn_addBlock();
 				
 				//Camera
 				_camera.position.x = -30;
 				_camera.position.y = 40;
 				_camera.position.z = 30;
-				_camera.lookAt(_scene.position);
+				_camera.lookAt(_scene.position);				
+				_camera.updateMatrixWorld();
+				_camera.matrixWorldInverse.getInverse( _camera.matrixWorld );
+				_cameraViewProjectionMatrix.multiplyMatrices( _camera.projectionMatrix, _camera.matrixWorldInverse );
+				_frustum.setFromMatrix( _cameraViewProjectionMatrix );
 				
 				//Renderer Target
 				document.body.appendChild(_renderer.domElement);
@@ -91,121 +107,124 @@
                 document.body.appendChild(_stats.domElement);
                 
                 //event
-                window.addEventListener('keydown', function(event){ keyDownHandler(event); });	//keydown event
-                window.addEventListener('resize', onWindowResize, false );					//window resize event
-                
-                //setInterval(function(){ _planeSpeed += 1; }, 1500);
+                window.addEventListener('keydown', function(event){ fn_keyDownHandler(event); });	//keydown event
+                window.addEventListener('resize', fn_onWindowResize, false );					//window resize event
+                var filter = "win16|win32|win64|mac";
+                if(navigator.platform){
+	                if(0 > filter.indexOf(navigator.platform.toLowerCase())){
+	                	//Mobile
+	                }
+                }
 			}
-
+			
         	function render(){
-				var boolRender = false;;
-        		for(let i=0;i<_bombNumber;i++){
-        			let object = _scene.getObjectByName( "bomb" + i, true );
-        			if(object){
-        				object.rotation.z += 0.2;
-        				object.position.x -= _planeSpeed;
-    	        		if(_carBox.intersectsBox(new THREE.Box3().setFromObject(object))){
-            				document.getElementById("gameOver").style.display = "block";
-            				boolRender = false;
-    					}else{
-    						boolRender = true;
-    					}
-        			}
-        		}
         		if(document.getElementById("gameOver").style.display=="none"){
                 	requestAnimationFrame( render );
-                    document.getElementById("scoreBoard").innerHTML = _score;
-                    defaultMove();
+                    document.getElementById("scoreBoard").innerHTML = "Score : " + _score +"<br/>Speed : " + _planeSpeed;
+                    fn_defaultMove();
                     _stats.update();
                     _renderer.render( _scene, _camera );
         		}
         	}
         	
-        	function defaultMove(){
-        		for(let i=0;i<_coinNumber;i++){
-        			let object = _scene.getObjectByName( "coin" + i, true );
-        			if(object){
-        				object.rotation.z += 0.2;
-        				object.position.x -= _planeSpeed;
-    	        		if(_carBox.intersectsBox(new THREE.Box3().setFromObject(object))){
-    	        			_scene.remove(object);
-    						_score++;
-    					}
+        	function fn_defaultMove(){
+        		for(let obj of _scene.children){
+        			if(obj.name == "coin" || obj.name == "bomb"){ 
+        				if(!_frustum.intersectsObject(obj) && obj.userData.intersect){
+        					_scene.remove(obj);
+        				}
+        				if(_frustum.intersectsObject(obj)){
+        					obj.userData.intersect = true;
+        				}
+        				if(obj.name == "coin"){ obj.rotation.z += 0.2; }
+        				obj.position.x -= _planeSpeed;
+	    				if(_carBox.intersectsBox(new THREE.Box3().setFromObject(obj))){
+	    					if(obj.name == "bomb"){
+	    						document.getElementById("gameOver").style.display = "block";
+		        			    clearInterval(_interval);
+	    					}else{
+			        			_scene.remove(obj);
+								_score += 10;
+	    					}
+	    				}
         			}
         		}
+        		
+        		//Wheel Spin
         		_sphere1.rotation.y += _wheelSpeed;
         		_sphere2.rotation.y += _wheelSpeed;
+        		
+        		//Road Move
 				_oldPlane.position.x -= _planeSpeed;
-
+				_newPlane.position.x -= _planeSpeed;
 				
-				if(_newPlane){
-					_newPlane.position.x -= _planeSpeed;
-					if(_newPlane.position.x==29){
-						_scene.remove(_oldPlane);
-						_oldPlane = new THREE.Mesh(_planeGeom, new THREE.MeshLambertMaterial({color:0x003b9b, shading: THREE.FlatShading}));
-						_oldPlane.rotation.x = -0.5 * Math.PI;
-						_oldPlane.position.x = 179;
-						_oldPlane.position.y = 0;
-						_oldPlane.position.z = 0;
-						_oldPlane.receiveShadow = true;
-						addCoin();
-						addBomb();
-						_scene.add(_oldPlane);
-					}
+				if(!_frustum.intersectsObject(_oldPlane)){
+					_scene.remove(_oldPlane);
+					fn_addBlock();
+					_oldPlane = new THREE.Mesh(_planeGeom, new THREE.MeshLambertMaterial({color:0x003b9b, wireframe:true, flatShading : true}));
+					_oldPlane.rotation.x = -0.5 * Math.PI;
+					_oldPlane.position.x = 155 + _newPlane.position.x;
+					_oldPlane.position.y = 0;
+					_oldPlane.position.z = 0;
+					_oldPlane.receiveShadow = true;
+					_oldPlane.name = "road";
+					_scene.add(_oldPlane);
 				}
-				if(_oldPlane.position.x==29){
-					if(_newPlane){
-						console.log(_scene);
-						_scene.remove(_newPlane);
-					}
-					_newPlane = new THREE.Mesh(_planeGeom, new THREE.MeshLambertMaterial({color:0x9b4300, shading: THREE.FlatShading}));
+				if(!_frustum.intersectsObject(_newPlane)){
+					_scene.remove(_newPlane);
+					fn_addBlock();
+					_newPlane = new THREE.Mesh(_planeGeom, new THREE.MeshLambertMaterial({color:0x9b4300, wireframe:true, flatShading : true}));
 					_newPlane.rotation.x = -0.5 * Math.PI;
-					_newPlane.position.x = 179;
+					_newPlane.position.x = 155 + _oldPlane.position.x;
 					_newPlane.position.y = 0;
 					_newPlane.position.z = 0;
 					_newPlane.receiveShadow = true;
-					addCoin();
-					addBomb();
+					_newPlane.name = "road";
 					_scene.add(_newPlane);
-				} 
+				}
 			}
         	//x:red y:green z:blue.
-        	function addCoin(){
-        		let random = Math.round(Math.random() * 2);
-        		let geometry = new THREE.CylinderGeometry(2, 2, 1, 20 );
-        		let material = new THREE.MeshLambertMaterial( {color: 0xf9eb4a, shading: THREE.FlatShading} );
-        		let coin = new THREE.Mesh( geometry, material );
-        		coin.rotation.x = -0.5 * Math.PI;
-        		coin.position.y = 2;
-        		coin.position.z = _positionZ[random];
-        		coin.name = "coin" + _coinNumber;
-        		coin.position.x = 250;
-        		_coinNumber++;
-        		_scene.add(coin);
+        	function fn_addBlock(){
+        		let randomBomb = Math.round(Math.random() * 1) + 1;	//Bomb Count
+        		let randomCoin = 3 - randomBomb;					//Coin Count
+        		let bombGeometry = new THREE.BoxGeometry(4, 4, 4);
+        		let bombMaterial = new THREE.MeshLambertMaterial({color: 0xff0000, flatShading :true});
+        		let coinGeometry = new THREE.CylinderGeometry(2, 2, 1, 20 );
+        		let coinMaterial = new THREE.MeshLambertMaterial({color: 0xf9eb4a, flatShading :true});
+        		var arrayBlock=[];
+        		for(let i=0; i<3; i++){
+        			arrayBlock[i] = Math.round(Math.random() * 2); 		
+        			for(let j=0; j<i; j++){
+        				if(arrayBlock[i] == arrayBlock[j]){
+        					i -= 1;
+        					break;
+        				}
+        			}
+        		}
+        		let block;
+        		for(let i=0; i<3; i++){
+        			if(i<randomBomb){
+        				block = new THREE.Mesh(bombGeometry, bombMaterial);
+        				block.name = "bomb";
+        			}else{
+        				block = new THREE.Mesh(coinGeometry, coinMaterial);
+        				block.rotation.x = -0.5 * Math.PI;
+        				block.name = "coin";
+        			}
+    				block.position.y = 2;
+    				block.position.z = _positionZ[arrayBlock[i]];
+    				block.position.x = 105;
+    				block.userData = {intersect : false};
+            		_scene.add(block);
+        		}
         	}
 			
-        	function addBomb(){
-        		let random = Math.round(Math.random() * 2);
-                
-        		let geometry = new THREE.BoxGeometry(4,4,4);
-        		let material = new THREE.MeshLambertMaterial( {color: 0xff0000, shading: THREE.FlatShading} );
-        		let bomb = new THREE.Mesh( geometry, material );
-        		bomb.rotation.x = -0.5 * Math.PI;
-        		bomb.position.y = 2;
-        		bomb.position.z = _positionZ[random];
-        		bomb.position.x =250;
-        		bomb.name = "bomb" + _bombNumber;
-        		_bombNumber++;
-        		_scene.add(bomb);
-        	}
-        	
-        	
-        	function createCar(){
+        	function fn_createCar(){
         		//2
-        		let geometry = new THREE.CylinderGeometry(1, 1, 1, 20 );
-				let material = new THREE.MeshLambertMaterial( {color: 0xffffff, wireframe: true, shading: THREE.FlatShading} );
-				_sphere1 = new THREE.Mesh( geometry, material );
-				_sphere2 = new THREE.Mesh( geometry, material );
+        		let geometry = new THREE.CylinderGeometry(1, 1, 1, 20);
+				let material = new THREE.MeshLambertMaterial({color: 0xffffff, wireframe: true, flatShading :true});
+				_sphere1 = new THREE.Mesh(geometry, material);
+				_sphere2 = new THREE.Mesh(geometry, material);
 				_sphere1.rotation.x = -0.5 * Math.PI;
 				_sphere2.rotation.x = -0.5 * Math.PI;
 				_sphere1.position.x = 3;
@@ -216,26 +235,27 @@
 				_carGroup.add(_sphere1);			
 				_carGroup.add(_sphere2);			
 
-        		geometry = new THREE.BoxGeometry(10,2,4 );
-				material = new THREE.MeshLambertMaterial( {color: 0xff0000, shading: THREE.FlatShading} );
-				let b1 = new THREE.Mesh( geometry, material );
-        		geometry = new THREE.BoxGeometry(5,2,4 );
-        		let b2 = new THREE.Mesh( geometry, material );
-				b1.position.y=1;
-				b2.position.y=3;
+        		geometry = new THREE.BoxGeometry(10, 2, 4);
+				material = new THREE.MeshLambertMaterial({color: 0xff0000, flatShading :true});
+				let b1 = new THREE.Mesh(geometry, material);
+        		geometry = new THREE.BoxGeometry(5, 2, 4);
+        		let b2 = new THREE.Mesh(geometry, material);
+				b1.position.y = 1;
+				b2.position.y = 3;
 				_carGroup.add(b1);
 				_carGroup.add(b2);
-				_carGroup.position.y=2;
-				_carGroup.position.x=-13;
-				_carGroup.position.z=3;
+				_carGroup.position.y = 2;
+				_carGroup.position.x = -13;
+				_carGroup.position.z = 3;
 				b1.castShadow = true;
 				b2.castShadow = true;
 				_carGroup.castShadow = true;
 				_carBox.setFromObject(_carGroup);
+				_carGroup.name = "car";
 				_scene.add( _carGroup );
         	}
 
-        	function keyDownHandler(event){
+        	function fn_keyDownHandler(event){
         		switch(event.keyCode){
 	        		case 39:
 	            		if(_carGroup.position.z<13){
@@ -251,7 +271,7 @@
     			_carBox.setFromObject(_carGroup);
         	}
 
-        	function onWindowResize(){
+        	function fn_onWindowResize(){
         	    _camera.aspect = window.innerWidth / window.innerHeight;
         	    _camera.updateProjectionMatrix();
 

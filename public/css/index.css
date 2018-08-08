@@ -1,5 +1,8 @@
 @charset "EUC-KR";
 body{
+    position: fixed;
+    width: 100%;
+    height: 100%; 
 	margin : 0px;
 	overflow : hidden;
 }
