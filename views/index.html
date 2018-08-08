@@ -113,6 +113,33 @@
                 if(navigator.platform){
 	                if(0 > filter.indexOf(navigator.platform.toLowerCase())){
 	                	//Mobile
+	                	window.addEventListener('touchstart', function(event) {
+	                		event.preventDefault(); 
+	                	    var touch = event.touches[0];
+	                	    touchstartX = touch.clientX;
+	                	    touchstartY = touch.clientY;
+	                	}, false);
+	                	window.addEventListener('touchend', function(event) {
+	                	    if(event.touches.length == 0) {
+	                	        var touch = event.changedTouches[event.changedTouches.length - 1];
+	                	        touchendX = touch.clientX;
+	                	        touchendY = touch.clientY;
+	                	        touchoffsetX = touchendX - touchstartX;
+	                	        touchoffsetY = touchendY - touchstartY;
+	                	        if(Math.abs(touchoffsetX) >= 80 && Math.abs(touchoffsetY) <= 10) {
+	                	            if(touchoffsetX < 0)
+
+	            	            		if(_carGroup.position.z<13){
+	            	        				_carGroup.position.z += 10;
+	            	            		}
+	            	        			if(_carGroup.position.z>0){
+	            	        				_carGroup.position.z -= 10;
+	            	        			}
+	                	            else
+	                	                alert("swipe right");
+	                	        }
+	                	    }
+	                	}, false);
 	                }
                 }
 			}
@@ -144,7 +171,7 @@
 		        			    clearInterval(_interval);
 	    					}else{
 			        			_scene.remove(obj);
-								_score += 10;
+								_score += 100;
 	    					}
 	    				}
         			}
