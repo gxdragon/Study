@@ -9,7 +9,8 @@
         <script src="/public/js/three/libs/stats.min.js"></script>
 	</head>
 	<body>
-	<div id="scoreBoard"></div>
+	<div id="scoreBoard" style="position:absolute;z-index:100000;top:0px;right:0px;width:100px;height:30px;background-color:white;"></div>
+	<div id="gameOver" style="position:absolute;z-index:100000;top:45%;left:45%;width:100px;height:30px;background:rgba(255, 0, 0, 0.0);display:none;"><font color="red" style="font-weight: bold;font-size: 50px;">Game Over</font></div>
 		<script>
 			var _scene = new THREE.Scene();
 			var _camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -25,7 +26,13 @@
 
 			var _carGroup = new THREE.Group();
 			var _coinGroup = new THREE.Group();
+			var _carBox = new THREE.Box3();
 
+			var _bombNumber=0;
+			var _coinNumber=0;
+        	var _positionZ = [-10,1,12];
+       
+			var _score = 0;
             init();
             render(); 
 			function init(){
@@ -62,6 +69,9 @@
 				//Coin
                 addCoin();
 				
+				//Bomb
+				addBomb();
+				
 				//Camera
 				_camera.position.x = -30;
 				_camera.position.y = 40;
@@ -76,34 +86,58 @@
                 _stats.domElement.style.position = 'absolute';
                 _stats.domElement.style.top = '0px';
                 _stats.domElement.style.zIndex = 100;
+                
                 //Stats Target
                 document.body.appendChild(_stats.domElement);
                 
                 //event
                 window.addEventListener('keydown', function(event){ keyDownHandler(event); });	//keydown event
                 window.addEventListener('resize', onWindowResize, false );					//window resize event
+                
+                //setInterval(function(){ _planeSpeed += 1; }, 1500);
 			}
 
         	function render(){
-                requestAnimationFrame( render );
-
-                defaultMove();
-                _stats.update();
-                _renderer.render( _scene, _camera );
+				var boolRender = false;;
+        		for(let i=0;i<_bombNumber;i++){
+        			let object = _scene.getObjectByName( "bomb" + i, true );
+        			if(object){
+        				object.rotation.z += 0.2;
+        				object.position.x -= _planeSpeed;
+    	        		if(_carBox.intersectsBox(new THREE.Box3().setFromObject(object))){
+            				document.getElementById("gameOver").style.display = "block";
+            				boolRender = false;
+    					}else{
+    						boolRender = true;
+    					}
+        			}
+        		}
+        		if(document.getElementById("gameOver").style.display=="none"){
+                	requestAnimationFrame( render );
+                    document.getElementById("scoreBoard").innerHTML = _score;
+                    defaultMove();
+                    _stats.update();
+                    _renderer.render( _scene, _camera );
+        		}
         	}
         	
         	function defaultMove(){
-        		_coin1.rotation.z += 0.2;
-        		_coin2.rotation.z += 0.2;
-        		_coin3.rotation.z += 0.2;
-
-        		_coin1.position.x -= _planeSpeed;
-        		_coin2.position.x -= _planeSpeed;
-        		_coin3.position.x -= _planeSpeed;
-        		
+        		for(let i=0;i<_coinNumber;i++){
+        			let object = _scene.getObjectByName( "coin" + i, true );
+        			if(object){
+        				object.rotation.z += 0.2;
+        				object.position.x -= _planeSpeed;
+    	        		if(_carBox.intersectsBox(new THREE.Box3().setFromObject(object))){
+    	        			_scene.remove(object);
+    						_score++;
+    					}
+        			}
+        		}
         		_sphere1.rotation.y += _wheelSpeed;
         		_sphere2.rotation.y += _wheelSpeed;
 				_oldPlane.position.x -= _planeSpeed;
+
+				
 				if(_newPlane){
 					_newPlane.position.x -= _planeSpeed;
 					if(_newPlane.position.x==29){
@@ -114,11 +148,14 @@
 						_oldPlane.position.y = 0;
 						_oldPlane.position.z = 0;
 						_oldPlane.receiveShadow = true;
+						addCoin();
+						addBomb();
 						_scene.add(_oldPlane);
 					}
 				}
 				if(_oldPlane.position.x==29){
 					if(_newPlane){
+						console.log(_scene);
 						_scene.remove(_newPlane);
 					}
 					_newPlane = new THREE.Mesh(_planeGeom, new THREE.MeshLambertMaterial({color:0x9b4300, shading: THREE.FlatShading}));
@@ -127,38 +164,39 @@
 					_newPlane.position.y = 0;
 					_newPlane.position.z = 0;
 					_newPlane.receiveShadow = true;
+					addCoin();
+					addBomb();
 					_scene.add(_newPlane);
 				} 
 			}
-
-        	var _coin1, _coin2, _coin3;
-        	//x:red y:green z:blue
+        	//x:red y:green z:blue.
         	function addCoin(){
+        		let random = Math.round(Math.random() * 2);
         		let geometry = new THREE.CylinderGeometry(2, 2, 1, 20 );
         		let material = new THREE.MeshLambertMaterial( {color: 0xf9eb4a, shading: THREE.FlatShading} );
-        		_coin1 = new THREE.Mesh( geometry, material );
-        		_coin2 = new THREE.Mesh( geometry, material );
-        		_coin3 = new THREE.Mesh( geometry, material );
-        		_coin1.rotation.x = -0.5 * Math.PI;
-        		_coin1.position.y = 2;
-        		_coin1.position.z = -10;
-        		_coin2 = new THREE.Mesh( geometry, material );
-        		_coin2.rotation.x = -0.5 * Math.PI;
-        		_coin2.position.y = 2;
-        		_coin2.position.z = 1;
-        		_coin3 = new THREE.Mesh( geometry, material );
-        		_coin3.rotation.x = -0.5 * Math.PI;
-        		_coin3.position.y = 2;
-        		_coin3.position.z = 12;
-        		/* _coinGroup.add(_coin1);
-        		_coinGroup.add(_coin2);
-        		_coinGroup.add(_coin3); */
-        		_coin1.position.x =100;
-        		_coin2.position.x =100;
-        		_coin3.position.x =100;
-        		_scene.add(_coin1);
-        		_scene.add(_coin2);
-        		_scene.add(_coin3);
+        		let coin = new THREE.Mesh( geometry, material );
+        		coin.rotation.x = -0.5 * Math.PI;
+        		coin.position.y = 2;
+        		coin.position.z = _positionZ[random];
+        		coin.name = "coin" + _coinNumber;
+        		coin.position.x = 250;
+        		_coinNumber++;
+        		_scene.add(coin);
+        	}
+			
+        	function addBomb(){
+        		let random = Math.round(Math.random() * 2);
+                
+        		let geometry = new THREE.BoxGeometry(4,4,4);
+        		let material = new THREE.MeshLambertMaterial( {color: 0xff0000, shading: THREE.FlatShading} );
+        		let bomb = new THREE.Mesh( geometry, material );
+        		bomb.rotation.x = -0.5 * Math.PI;
+        		bomb.position.y = 2;
+        		bomb.position.z = _positionZ[random];
+        		bomb.position.x =250;
+        		bomb.name = "bomb" + _bombNumber;
+        		_bombNumber++;
+        		_scene.add(bomb);
         	}
         	
         	
@@ -193,6 +231,7 @@
 				b1.castShadow = true;
 				b2.castShadow = true;
 				_carGroup.castShadow = true;
+				_carBox.setFromObject(_carGroup);
 				_scene.add( _carGroup );
         	}
 
@@ -209,6 +248,7 @@
 	        			}
         			break;
         		}
+    			_carBox.setFromObject(_carGroup);
         	}
 
         	function onWindowResize(){
