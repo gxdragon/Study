@@ -38,7 +38,7 @@
 			var _frustum = new THREE.Frustum();
 			var _cameraViewProjectionMatrix = new THREE.Matrix4();
 			var _interval = setInterval(function(){ 
-             	_planeSpeed = parseFloat((_planeSpeed + 0.1).toFixed(2));
+             	_planeSpeed = parseFloat((_planeSpeed + 0.01).toFixed(3));
             }, 1000);
             init();
             render(); 
