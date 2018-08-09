@@ -8,4 +8,10 @@ module.exports = function(app)
      app.get('/',function(req,res){
         res.render('index.html')
      });
+     app.get('/race',function(req,res){
+         res.render('race.html')
+      });
+     app.get('/fps',function(req,res){
+         res.render('fps.html')
+      });
 }
