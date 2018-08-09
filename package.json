@@ -1,11 +1,11 @@
 {
   "name": "Study",
   "private": true,
-  "version": "0.0.1",
-  "description": "Study Three.js & Node.js",
+  "version": "0.0.2",
+  "description": "Study Three.js",
   "main": "app.js",
   "author": "https://github.com/gxdragon/Study.git",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "ejs": "^2.6.1",
     "express": "^4.16.3"
