@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>Space Defence</title>
+		<link rel="stylesheet" type="text/css" href="../public/css/index.css">
+		<script src="/public/js/jquery/jquery-3.1.1.min.js"></script>
+		<script src="/public/js/three/three.js"></script>
+        <script src="/public/js/three/libs/stats/stats.min.js"></script>
+        <script src="/public/js/three/libs/controls/OrbitControls.js"></script>
+        <script src="/public/js/defence/defence.js"></script>
+        <script type="text/javascript">
+			/* var _monster;
+			var _towerGroup, _towerRange;
+			var _box = new THREE.Box3();
+			var _sphere;
+			 */
+			function init(){
+				defence.init("Tower Defence");
+			}
+        	$(document).ready(function(){
+    			/* defence.init("Tower Defence"); */
+    			
+				//_monster
+				/* _monster = new THREE.Mesh(new THREE.BoxGeometry(5,5,5), new THREE.MeshLambertMaterial({color: 0xffffff}));
+				_monster.position.x=-25;
+				_monster.position.y=-25;
+				_monster.userData={hp:100};
+    			_scene.add(_monster);
+
+    			let _towerGroup = new THREE.Mesh(new THREE.BoxGeometry(5,5,5), new THREE.MeshLambertMaterial({color: 0xffffff}));
+    			//_towerGroup.position.y=-10;
+    			_towerGroup.geometry.computeBoundingBox();   
+    		    center = _towerGroup.geometry.boundingBox.center();
+    		    _sphere = new THREE.Sphere(center,15);
+    			_towerRange = new THREE.Mesh(new THREE.SphereGeometry(15,30,30), new THREE.MeshLambertMaterial({color: 0xffffff, wireframe:true}));
+    			_towerRange.position.y=_towerGroup.position.y;
+    			_scene.add(_towerGroup);
+    			_scene.add(_towerRange); */
+    			
+    			
+				//Camera
+				
+				//Renderer Target
+                //window.addEventListener('keydown', function(event){ render(); });
+        	});		
+        </script>
+	</head>
+	<body onload="init();">
+	</body>
+</html>
