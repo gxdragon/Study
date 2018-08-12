@@ -27,6 +27,7 @@
 	let _stats, _controls;
 	
 	//planet
+	let _planet; 
 	let _life = 0;
 	//satellite
 	//enemy
@@ -37,6 +38,7 @@
 			
 			//Default Settings
 			defence.tools.renderer();
+			defence.tools.scene();
 			defence.tools.axes();
 			defence.tools.light();
 			defence.tools.stats();
@@ -60,11 +62,15 @@
 			
             render();
             window.addEventListener('keydown', function(event){ key(); });
+            window.addEventListener('resize', fn_onWindowResize, false );					//window resize event
 		},
 		tools : {
 			renderer : function(){
 				_renderer.setClearColor(0xEEEEEE, 1.0);
 				_renderer.setSize(window.innerWidth, window.innerHeight);
+			},
+			scene : function(){
+				_scene.userData = {pivot:[]};
 			},
 			axes : function(){
 				let axes = new THREE.AxesHelper(200);
@@ -107,11 +113,11 @@
 		},
 		planet : {
 			init : function(life){
-				let planet = new THREE.Mesh(
-						new THREE.SphereGeometry(10,30,30),
+				_planet = new THREE.Mesh(
+						new THREE.SphereGeometry(30,30,30),
 						new THREE.MeshLambertMaterial({color: 0xffffff,wireframe:true}));
-				planet.name="planet";
-				_scene.add(planet);
+				_planet.name="planet";
+				_scene.add(_planet);
 				defence.planet.setLife(life);
 			},
 			getLife : function(){
@@ -127,13 +133,18 @@
 				let satellite = new THREE.Mesh(
 						new THREE.SphereGeometry(5,30,30),
 						new THREE.MeshLambertMaterial({color: 0xff0000}));
-				satellite.position.z = -30;
-				satellite.position.x = -30;
+				satellite.position.x = Math.round(Math.random() * 300)- 150 ;
+				satellite.position.y = Math.round(Math.random() * 300)- 150 ;
+				satellite.position.z = Math.round(Math.random() * 300)- 150 ;
 				satellite.userData = {attackSpeed : 10, attackPoint:5, speed:2};
 				satellite.name = "satellite";
-				_scene.add(satellite);
 
-				satellite = new THREE.Mesh(
+				var pivot = new THREE.Object3D();
+				_planet.add( pivot );
+				pivot.add( satellite );
+				_scene.userData.pivot.push(pivot);
+				//_scene.add(satellite);
+				/*satellite = new THREE.Mesh(
 						new THREE.SphereGeometry(5,30,30),
 						new THREE.MeshLambertMaterial({color: 0xff0000}));
 				satellite.position.y = -30;
@@ -147,7 +158,7 @@
 				satellite.position.x = -30;
 				satellite.userData = {attackSpeed : 10, attackPoint:5, speed:2};
 				satellite.name = "satellite";
-				_scene.add(satellite);
+				_scene.add(satellite);*/
 			}
 			//위성(Tower)
 		},
@@ -166,7 +177,6 @@
 		}
 	};
 	
-	const _planet = {x:0,y:0};
 	function transformation(/*cx:Number,cy:Number,
             px:Number,py:Number,
             rad:Number*/)/*:Object*/
@@ -215,43 +225,6 @@ return {x:rx , y:ry}*/
 		_monster.position.y += 0.1;*/
 		//x:red y:green z:blue.
 		for(let obj of _scene.children){
-			
-			if(obj.name == "satellite"){ 
-				obj.updateMatrixWorld();
-				var px,py;
-				if(obj.position.x != 0){
-					px = obj.position.x;
-					py = obj.position.y;
-					if(obj.position.z !=0){
-						py = obj.position.z;
-					}
-				}else if(obj.position.y != 0){
-					px = obj.position.z;
-					py = obj.position.y;
-				}else{
-					px = obj.position.x;
-					py = obj.position.z;
-				}
-				var rx = ((px - 0) * Math.cos(obj.userData.speed * Math.PI/180) - (py - 0) * Math.sin(obj.userData.speed * Math.PI/180)) + 0; 
-				var ry = ((px - 0) * Math.sin(obj.userData.speed * Math.PI/180) + (py - 0) * Math.cos(obj.userData.speed * Math.PI/180)) + 0;
-
-
-				if(obj.position.x != 0){
-					obj.position.x = rx;
-					if(obj.position.z !=0){
-						obj.position.z = ry;
-					}else{					
-						obj.position.y = ry;
-					}
-				}else if(obj.position.y != 0){
-					obj.position.z = rx;
-					obj.position.y = ry;
-				}else{
-					obj.position.x = rx;
-					obj.position.z = ry;
-				}
-			}
-			
 			if(obj.name == "enemy"){
 				obj.updateMatrixWorld();
 				var pos = obj.position;
@@ -278,6 +251,13 @@ return {x:rx , y:ry}*/
 				}
 			}
 		}
+		
+		for(let obj of _scene.userData.pivot){
+			//obj.rotation.y += 0.01;
+			//obj.rotation.y += 0.01;
+			/*obj.rotation.x += 0.01;*/
+			/*obj.rotation.z += 0.01;*/
+		}
        	requestAnimationFrame( render );
        	
        	if(_stats) _stats.update();
@@ -285,9 +265,18 @@ return {x:rx , y:ry}*/
        	 
         _renderer.render( _scene, _camera );
 	}
-	function key(){
+	function fn_onWindowResize(){
+	    _camera.aspect = window.innerWidth / window.innerHeight;
+	    _camera.updateProjectionMatrix();
+
+	    _renderer.setSize( window.innerWidth, window.innerHeight );
 	}
-	
+	function key(){
+		/*for(let obj of _scene.userData.pivot){
+			console.log(obj);
+		}
+		defence.satellite.addSatellite();*/
+	}
 	if ( !noGlobal ) {
 		window.defence = defence;
 	}
