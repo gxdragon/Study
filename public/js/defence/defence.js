@@ -28,9 +28,9 @@
 	
 	//planet
 	let _planet; 
-	let _life = 0;
 	//satellite
 	//enemy
+	let _interval;
 	
 	defence = {
 		init : function(title){
@@ -55,18 +55,21 @@
             //addSatellite
             defence.satellite.addSatellite();
             
-            //addEnemy
             defence.enemy.addEnemy();
-            
+			var _interval = setInterval(function(){ 
+	            //addEnemy
+	            //defence.enemy.addEnemy();
+            }, 5000);
+
             //render started
-			
             render();
+            
             window.addEventListener('keydown', function(event){ key(); });
             window.addEventListener('resize', fn_onWindowResize, false );					//window resize event
 		},
 		tools : {
 			renderer : function(){
-				_renderer.setClearColor(0xEEEEEE, 1.0);
+				_renderer.setClearColor(0x000000, 1.0);
 				_renderer.setSize(window.innerWidth, window.innerHeight);
 			},
 			scene : function(){
@@ -117,14 +120,8 @@
 						new THREE.SphereGeometry(30,30,30),
 						new THREE.MeshLambertMaterial({color: 0xffffff,wireframe:true}));
 				_planet.name="planet";
+				_planet.userData = {life:10};
 				_scene.add(_planet);
-				defence.planet.setLife(life);
-			},
-			getLife : function(){
-				return _life;
-			},
-			setLife : function(life){
-				_life = life;
 			}
 			//행성 (여기서는 주성 개념)
 		},
@@ -168,97 +165,64 @@
 				let enemy = new THREE.Mesh(
 						new THREE.SphereGeometry(5,30,30),
 						new THREE.MeshLambertMaterial({color: 0xffff00}));
-				enemy.position.x = 30;
-				enemy.position.y = 30;
-				enemy.position.z = -30;
+				enemy.position.x = Math.round(Math.random() * 300)- 150 ;
+				enemy.position.y = Math.round(Math.random() * 300)- 150 ;
+				enemy.position.z = Math.round(Math.random() * 300)- 150 ;
+				enemy.userData = {hp:100};
 				enemy.name = "enemy";
 				_scene.add(enemy);
 			}
 		}
 	};
 	
-	function transformation(/*cx:Number,cy:Number,
-            px:Number,py:Number,
-            rad:Number*/)/*:Object*/
-{
-/*
-var rx:Number = (px-cx)*Math.cos(rad) - (py-cy)*Math.sin(rad) + cx;
-var ry:Number = (px-cx)*Math.sin(rad) + (py-cy)*Math.cos(rad) + cy;                
-return {x:rx , y:ry}*/     
-}
-
-	var a = true;
 	function render(){
-		/*if(!_frustum.intersectsObject(_monster)){
-			_scene.remove(_monster);
-			_monster = new THREE.Mesh(new THREE.BoxGeometry(5,5,5), new THREE.MeshLambertMaterial({color: 0xffffff}));
-			_monster.position.x=-25;
-			_monster.position.y=-25;
-			_monster.userData = {hp:100};
-			_scene.add(_monster);
-		}
-		if(_monster.userData.hp<=0){
-			_scene.remove(_monster);
-			_monster = new THREE.Mesh(new THREE.BoxGeometry(5,5,5), new THREE.MeshLambertMaterial({color: 0xffffff}));
-			_monster.position.x=-25;
-			_monster.position.y=-25;
-			_monster.userData = {hp:100};
-			_scene.add(_monster);
-		}
-		_box.setFromObject(_monster);
-		if(_box.intersectsSphere(_sphere)){
-			if(f){
-				f=false;
-				attack = setInterval(function(){ 
-					_monster.userData.hp -= 10;
-				}, Attack Speed300);
-				console.log("Attack Start");
-			}
-		}else{
-			if(f==false){
-				f=true;
-				console.log("Attack Stop");
-				clearInterval(attack);
-			}
-		}
-		_monster.position.x += 0.1;
-		_monster.position.y += 0.1;*/
 		//x:red y:green z:blue.
 		for(let obj of _scene.children){
 			if(obj.name == "enemy"){
 				obj.updateMatrixWorld();
 				var pos = obj.position;
+				var tx = (Math.abs(pos.x) / (Math.abs(pos.x) + Math.abs(pos.y) + Math.abs(pos.z)));
+				var ty = (Math.abs(pos.y) / (Math.abs(pos.x) + Math.abs(pos.y) + Math.abs(pos.z)));
+				var tz = (Math.abs(pos.z) / (Math.abs(pos.x) + Math.abs(pos.y) + Math.abs(pos.z)));
 				if(pos.x!=0){
 					if(pos.x>0){
-						obj.position.x -= 0.1
+						obj.position.x -= 0.5 * tx; 
 					}else{
-						obj.position.x += 0.1
+						obj.position.x += 0.5 * tx;
 					}
 				}
 				if(pos.y!=0){
 					if(pos.y>0){
-						obj.position.y -= 0.1
+						obj.position.y -= 0.5 * ty;
 					}else{
-						obj.position.y += 0.1
+						obj.position.y += 0.5 * ty;
 					}
 				}
 				if(pos.z!=0){
 					if(pos.z>0){
-						obj.position.z -= 0.1
+						obj.position.z -= 0.5 * tz;
 					}else{
-						obj.position.z += 0.1
+						obj.position.z += 0.5 * tz;
 					}
 				}
+				//Game Over Flag
+				obj.updateMatrixWorld();
+				_planet.geometry.computeBoundingSphere();
+				if(_planet.geometry.boundingSphere.intersectsSphere(new THREE.Sphere(obj.position,5))){
+        			_scene.remove(obj);
+        			_planet.userData.life--;
+        			if(_planet.userData.life==0){
+						document.getElementById("gameOver").style.display = "block";
+        			    clearInterval(_interval);
+        			}
+				}
+				
 			}
 		}
-		
-		for(let obj of _scene.userData.pivot){
-			//obj.rotation.y += 0.01;
-			//obj.rotation.y += 0.01;
-			/*obj.rotation.x += 0.01;*/
-			/*obj.rotation.z += 0.01;*/
+
+		if(_planet.userData.life != 0){
+			requestAnimationFrame( render );
 		}
-       	requestAnimationFrame( render );
        	
        	if(_stats) _stats.update();
        	if(_controls) _controls.update();
@@ -272,10 +236,7 @@ return {x:rx , y:ry}*/
 	    _renderer.setSize( window.innerWidth, window.innerHeight );
 	}
 	function key(){
-		/*for(let obj of _scene.userData.pivot){
-			console.log(obj);
-		}
-		defence.satellite.addSatellite();*/
+		defence.satellite.addSatellite();
 	}
 	if ( !noGlobal ) {
 		window.defence = defence;
