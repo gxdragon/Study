@@ -45,7 +45,7 @@
 			defence.tools.camera();
 			defence.tools.controls();
             defence.tools.board();
-            
+            defence.tools.button.addButton();
 			document.body.appendChild(_renderer.domElement);
             document.body.appendChild(_stats.domElement);
 
@@ -56,15 +56,15 @@
             defence.satellite.addSatellite();
             
             defence.enemy.addEnemy();
-			var _interval = setInterval(function(){ 
+			/*var _interval = setInterval(function(){ 
 	            //addEnemy
 	            //defence.enemy.addEnemy();
-            }, 5000);
-
+            }, 1000);
+*/
             //render started
             render();
             
-            window.addEventListener('keydown', function(event){ key(); });
+            /*window.addEventListener('keydown', function(event){ key(); });*/
             window.addEventListener('resize', fn_onWindowResize, false );					//window resize event
 		},
 		tools : {
@@ -73,7 +73,7 @@
 				_renderer.setSize(window.innerWidth, window.innerHeight);
 			},
 			scene : function(){
-				_scene.userData = {pivot:[]};
+				_scene.userData = {enemy:[]};
 			},
 			axes : function(){
 				let axes = new THREE.AxesHelper(200);
@@ -112,6 +112,13 @@
 				let html = "<div class='score' id='scoreBoard'></div>";
 				html += "<div class='gameOver' id='gameOver'><span>Game Over</span></div>";
 				document.body.innerHTML += html;
+			},
+			button: {
+				addButton : function(){
+					let html = "<span class='button' style='right:200px;' onclick='defence.satellite.addSatellite();'> Add Satellite </span>";
+					html += "<span class='button' style='right:100px;' onclick='defence.enemy.addEnemy();'> Add Enemy </span>";
+					document.body.innerHTML += html;
+				}
 			}
 		},
 		planet : {
@@ -130,32 +137,16 @@
 				let satellite = new THREE.Mesh(
 						new THREE.SphereGeometry(5,30,30),
 						new THREE.MeshLambertMaterial({color: 0xff0000}));
-				satellite.position.x = Math.round(Math.random() * 300)- 150 ;
-				satellite.position.y = Math.round(Math.random() * 300)- 150 ;
-				satellite.position.z = Math.round(Math.random() * 300)- 150 ;
-				satellite.userData = {attackSpeed : 10, attackPoint:5, speed:2};
+				satellite.position.x = Math.round(Math.random() * 300)- 150;
+				satellite.position.y = Math.round(Math.random() * 300)- 150;
+				satellite.position.z = Math.round(Math.random() * 300)- 150;
+				satellite.userData = {attackSpeed : 100, attackPoint : 5, speed : 2, turningFlag : {x : false, y : false, z : false}, position : {x:satellite.position.x,y:satellite.position.y,z:satellite.position.z}};
 				satellite.name = "satellite";
-
-				var pivot = new THREE.Object3D();
-				_planet.add( pivot );
-				pivot.add( satellite );
-				_scene.userData.pivot.push(pivot);
-				//_scene.add(satellite);
-				/*satellite = new THREE.Mesh(
-						new THREE.SphereGeometry(5,30,30),
-						new THREE.MeshLambertMaterial({color: 0xff0000}));
-				satellite.position.y = -30;
-				satellite.userData = {attackSpeed : 10, attackPoint:5, speed:2};
-				satellite.name = "satellite";
-				_scene.add(satellite);
-				
-				satellite = new THREE.Mesh(
-						new THREE.SphereGeometry(5,30,30),
-						new THREE.MeshLambertMaterial({color: 0xff0000}));
-				satellite.position.x = -30;
-				satellite.userData = {attackSpeed : 10, attackPoint:5, speed:2};
-				satellite.name = "satellite";
-				_scene.add(satellite);*/
+				if((satellite.position.x > 40 || satellite.position.x < -40) || (satellite.position.y > 40 || satellite.position.y < -40) || (satellite.position.z > 40 || satellite.position.z < -40) ){
+					_scene.add(satellite);
+				}else{
+					defence.satellite.addSatellite();
+				}
 			}
 			//위성(Tower)
 		},
@@ -168,8 +159,9 @@
 				enemy.position.x = Math.round(Math.random() * 300)- 150 ;
 				enemy.position.y = Math.round(Math.random() * 300)- 150 ;
 				enemy.position.z = Math.round(Math.random() * 300)- 150 ;
-				enemy.userData = {hp:100};
+				enemy.userData = {hp:10,interval:null};
 				enemy.name = "enemy";
+				_scene.userData.enemy.push(enemy);
 				_scene.add(enemy);
 			}
 		}
@@ -177,9 +169,36 @@
 	
 	function render(){
 		//x:red y:green z:blue.
+		_planet.geometry.computeBoundingSphere();
 		for(let obj of _scene.children){
+			obj.updateMatrixWorld();
+			if(obj.name == "satellite"){
+				let pos = obj.userData.position;
+				let enemySpotted = false;
+				let satelliteP = new THREE.Sphere(obj.position, 10);
+				
+				for(let enemy of _scene.userData.enemy){
+					if(satelliteP.intersectsSphere(new THREE.Sphere(enemy.position,5))){
+						enemy.userData.interval = setInterval(function(){ 
+							enemy.userData.hp -= obj.attackPoint;
+							if(enemy.userData.hp<=0){
+								clearInterval(enemy.userData.interval);
+								_scene.userData.enemy.remove(enemy);
+								_scene.remove(enemy);
+							}
+			            }, 10000 / obj.userData.attacSpeed );
+						enemySpotted = true;
+					}else{
+						if(enemy.userData.interval != null){
+							clearInterval(enemy.userData.interval);
+						}
+					}
+				}
+				if(enemySpotted == false){
+					eulerRotate(pos,obj);
+				}
+			}
 			if(obj.name == "enemy"){
-				obj.updateMatrixWorld();
 				var pos = obj.position;
 				var tx = (Math.abs(pos.x) / (Math.abs(pos.x) + Math.abs(pos.y) + Math.abs(pos.z)));
 				var ty = (Math.abs(pos.y) / (Math.abs(pos.x) + Math.abs(pos.y) + Math.abs(pos.z)));
@@ -205,15 +224,14 @@
 						obj.position.z += 0.5 * tz;
 					}
 				}
+				
 				//Game Over Flag
-				obj.updateMatrixWorld();
-				_planet.geometry.computeBoundingSphere();
 				if(_planet.geometry.boundingSphere.intersectsSphere(new THREE.Sphere(obj.position,5))){
         			_scene.remove(obj);
         			_planet.userData.life--;
         			if(_planet.userData.life==0){
 						document.getElementById("gameOver").style.display = "block";
-        			    clearInterval(_interval);
+        			    //clearInterval(_interval);
         			}
 				}
 				
@@ -235,9 +253,58 @@
 
 	    _renderer.setSize( window.innerWidth, window.innerHeight );
 	}
-	function key(){
-		defence.satellite.addSatellite();
+	function key(target,obj){
+		//render();
+		defence.enemy.addEnemy();
 	}
+	
+	function eulerRotate(pos, obj){
+		let sp = 0.01;
+		if(pos.x >= pos.y){
+			if(pos.x>=pos.z){
+				let target = ((Math.abs(pos.z) / Math.abs(pos.y)).toFixed(3));
+				if(pos.z >0){
+					target = -target;
+				}
+				if(pos.y < 0){
+					target = -target;
+				}
+				let euler = new THREE.Euler(0, sp * target ,sp, 'XYZ' );
+				obj.position = obj.position.applyEuler(euler);
+			}else{
+				let target = ((Math.abs(pos.z) / Math.abs(pos.y)).toFixed(3));
+				if(pos.z >0){
+					target = -target;
+				}
+				if(pos.y < 0){
+					target = -target;
+				}
+				let euler = new THREE.Euler(0, sp * target ,sp, 'XYZ' );
+				obj.position = obj.position.applyEuler(euler);
+			}
+		}else if(pos.y>=pos.z){
+			let target = ((Math.abs(pos.x) / Math.abs(pos.z)).toFixed(3));
+			if(pos.x >0){
+				target = -target;
+			}
+			if(pos.z < 0){
+				target = -target;
+			}
+			let euler = new THREE.Euler(sp, 0  ,sp* target, 'XYZ' );
+			obj.position = obj.position.applyEuler(euler);
+		}else{
+			let target = ((Math.abs(pos.x) / Math.abs(pos.y)).toFixed(3));
+			if(pos.x >0){
+				target = -target;
+			}
+			if(pos.y < 0){
+				target = -target;
+			}
+			let euler = new THREE.Euler(sp, sp * target ,0, 'XYZ' );
+			obj.position = obj.position.applyEuler(euler);
+		}
+	}
+	
 	if ( !noGlobal ) {
 		window.defence = defence;
 	}
